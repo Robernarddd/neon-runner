@@ -55,7 +55,8 @@
     <script type="importmap">
       {
         "imports": {
-          "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
         }
       }
     </script>
@@ -74,6 +75,13 @@
     <!-- type="module" : ce script peut "importer" d'autres morceaux de code. -->
     <script type="module">
       import * as THREE from "three";
+      // 🌟 LES OUTILS DU BLOOM (le halo lumineux), pris dans les "addons".
+      //    - EffectComposer  = la chaîne de montage qui retouche l'image.
+      //    - RenderPass      = le 1er poste : dessine la scène normalement.
+      //    - UnrealBloomPass = le 2e poste : repère le lumineux et le fait briller.
+      import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+      import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+      import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 
       // 🎬 LA SCÈNE : le décor où l'on place les objets.
       const scene = new THREE.Scene();
@@ -94,6 +102,46 @@
       const renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
+
+      // 🌟 LE BLOOM : on remplace le dessin direct par une CHAÎNE DE MONTAGE.
+      //    1) on crée la chaîne, branchée sur notre peintre (renderer) ;
+      const composer = new EffectComposer(renderer);
+      //    2) Poste 1 : dessiner la scène vue par la caméra, comme avant ;
+      composer.addPass(new RenderPass(scene, camera));
+
+      // 🌟 RÉGLAGES DU HALO — c'est TOI qui les ajusteras à l'œil !
+      //    - FORCE   : l'intensité du halo. Petit = discret, grand = ça baigne dans la lumière.
+      //    - ETALEMENT : à quel point le halo bave loin autour de l'objet.
+      //    - SEUIL   : à partir de quelle luminosité un objet se met à briller.
+      //                0 = tout brille ; plus on monte, plus il faut être lumineux.
+      const FORCE_BLOOM = 0.6;
+      const ETALEMENT_BLOOM = 0.5;
+      const SEUIL_BLOOM = 0.1;
+
+      //    3) Poste 2 : le poste qui fait briller. Le 1er réglage est la
+      //       "résolution" du halo (la taille de l'écran), puis nos 3 réglages.
+      const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        FORCE_BLOOM,
+        ETALEMENT_BLOOM,
+        SEUIL_BLOOM
+      );
+      composer.addPass(bloomPass);
+
+      // 📐 S'ADAPTER À LA TAILLE DE LA FENÊTRE.
+      //    Le navigateur envoie un signal "resize" à chaque fois que la
+      //    fenêtre change de taille. On l'écoute et on refait les réglages :
+      //    - on redonne à la caméra les bonnes PROPORTIONS (sinon l'image
+      //      est étirée), puis on la "met à jour" pour qu'elle en tienne compte ;
+      //    - on redonne au renderer la nouvelle TAILLE d'image ;
+      //    - et on prévient AUSSI la chaîne du bloom de la nouvelle taille.
+      //    (Le bloom est créé juste au-dessus : il existe donc déjà ici.)
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+      });
 
       // ⚙️ RÉGLAGE : à quelle vitesse le sol défile vers nous.
       //    Plus le nombre est grand, plus on a l'impression d'aller vite.
@@ -306,7 +354,7 @@
         // 🏁 SI LA PARTIE EST FINIE : on ne bouge plus rien.
         //    On dessine quand même l'image figée, puis on s'arrête là.
         if (partieFinie) {
-          renderer.render(scene, camera);
+          composer.render();
           return;
         }
 
@@ -377,7 +425,7 @@
           sol.position.z -= tailleCase;
         }
 
-        renderer.render(scene, camera); // le peintre dessine l'image
+        composer.render(); // la chaîne dessine l'image PUIS ajoute le halo néon
       }
 
       animer(); // on lance la boucle

@@ -22,9 +22,6 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 
 ## 🟦 À faire
 
-### T07 — L'effet WAOU #1 : le néon (bloom)
-**Fini quand :** les objets lumineux « brillent » grâce au post-traitement (bloom). C'est le moment où le jeu devient beau.
-
 ### T08 — L'effet WAOU #2 : le juice
 **Fini quand :** particules à la collecte d'un orbe, secousse d'écran au crash, et au moins un son court. Le jeu devient « satisfaisant ».
 
@@ -49,6 +46,9 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 ---
 
 ## 🟩 Fait
+
+### T07 — L'effet WAOU #1 : le néon (bloom)
+**Fini quand :** les objets lumineux « brillent » grâce au post-traitement (bloom). C'est le moment où le jeu devient beau. ✅
 
 ### T06 — La montée en difficulté
 **Fini quand :** la vitesse augmente progressivement avec le temps. ✅
