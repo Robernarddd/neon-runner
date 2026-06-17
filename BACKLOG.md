@@ -22,9 +22,6 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 
 ## 🟦 À faire
 
-### T04 — Les obstacles et la collision
-**Fini quand :** des obstacles arrivent vers le joueur ; en toucher un déclenche un **game over**.
-
 ### T05 — Les orbes et le score
 **Fini quand :** des orbes à ramasser rapportent des points ; le score s'affiche ; le **meilleur score** est conservé entre deux parties.
 
@@ -58,6 +55,9 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 ---
 
 ## 🟩 Fait
+
+### T04 — Les obstacles et la collision
+**Fini quand :** des obstacles arrivent vers le joueur ; en toucher un déclenche un **game over**. ✅
 
 ### T03 — Le joueur et ses déplacements
 **Fini quand :** un objet « joueur » est à l'écran et se déplace à gauche/droite au clavier. ✅

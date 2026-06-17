@@ -10,6 +10,22 @@
         margin: 0;
         overflow: hidden;
       }
+
+      /* Le panneau "GAME OVER", posé par-dessus la 3D.
+         Caché au départ (display: none), on l'affichera au crash. */
+      #gameover {
+        display: none;                 /* invisible tant qu'on n'a pas perdu */
+        position: fixed;               /* collé à l'écran, par-dessus le jeu */
+        inset: 0;                      /* prend tout l'écran */
+        align-items: center;           /* centre verticalement */
+        justify-content: center;       /* centre horizontalement */
+        flex-direction: column;
+        background: rgba(0, 0, 0, 0.6); /* voile noir semi-transparent */
+        color: #ff0033;                /* rouge, comme les obstacles */
+        font-family: sans-serif;
+        font-size: 64px;
+        text-shadow: 0 0 20px #ff0033;  /* petite lueur néon */
+      }
     </style>
 
     <!-- L'importmap dit au navigateur où trouver "three" :
@@ -24,6 +40,9 @@
   </head>
 
   <body>
+    <!-- Le panneau de fin de partie (caché tant qu'on n'a pas perdu). -->
+    <div id="gameover">GAME OVER</div>
+
     <!-- type="module" : ce script peut "importer" d'autres morceaux de code. -->
     <script type="module">
       import * as THREE from "three";
@@ -81,6 +100,60 @@
       joueur.position.set(0, 0.3, 3);
       scene.add(joueur);
 
+      // 🔴 LES OBSTACLES : des mesh (forme + couleur), comme le joueur.
+      //    Forme et matière sont les MÊMES pour tous : on les crée une fois,
+      //    puis on les réutilise pour chaque cube (c'est plus économe).
+      const formeObstacle = new THREE.BoxGeometry(0.8, 0.8, 0.8);
+      const matiereObstacle = new THREE.MeshBasicMaterial({ color: 0xff0033 });
+
+      // 🔴 RÉGLAGE : à quelle vitesse les obstacles foncent vers nous.
+      //    👉 Plus c'est grand, plus c'est dur. Essaie 0.1, puis 0.25 !
+      const vitesseObstacle = 0.15;
+
+      // 🔴 RÉGLAGE : combien d'obstacles en même temps dans le couloir.
+      //    👉 Essaie 1, puis 5 : le couloir se remplit !
+      const NB_OBSTACLES = 3;
+
+      // 🔴 RÉGLAGE : la profondeur (z) à laquelle un obstacle a disparu
+      //    DERRIÈRE la caméra. Au-delà, on le recycle au fond.
+      const zDisparition = 6;
+
+      // 🎲 UNE RECETTE (fonction) : envoyer un obstacle TOUT AU FOND,
+      //    sur une voie (gauche / centre / droite) tirée au hasard.
+      function placerAuFond(obstacle) {
+        // Math.random() donne un nombre au hasard entre 0 et 1.
+        // (Math.random() * 5) → entre 0 et 5 ; "- 2.5" → entre -2.5 et +2.5.
+        // Résultat : une position x au hasard sur toute la largeur du couloir.
+        obstacle.position.x = Math.random() * 5 - 2.5;
+        obstacle.position.z = -20;
+      }
+
+      // 📦 LE TABLEAU : une liste qui va contenir tous nos obstacles.
+      const obstacles = [];
+
+      // On fabrique NB_OBSTACLES cubes, espacés au départ pour ne pas
+      // tous arriver collés. La boucle "for" répète NB_OBSTACLES fois.
+      for (let i = 0; i < NB_OBSTACLES; i++) {
+        const obstacle = new THREE.Mesh(formeObstacle, matiereObstacle);
+        obstacle.position.y = 0.4;          // posé sur le sol
+        placerAuFond(obstacle);              // voie au hasard, z = -20
+        obstacle.position.z -= i * 8;        // on décale chacun plus loin
+        scene.add(obstacle);                 // on l'ajoute à la scène
+        obstacles.push(obstacle);            // ...et au tableau
+      }
+
+      // 🏁 L'ÉTAT DU JEU : tant que c'est false, on joue.
+      //    Au crash, on le passe à true et la boucle gèle tout.
+      let partieFinie = false;
+
+      // Un raccourci vers le panneau "GAME OVER" du HTML, pour l'afficher.
+      const panneauGameOver = document.getElementById("gameover");
+
+      // 💥 RÉGLAGE : à quelle distance on considère que ça "touche".
+      //    Plus c'est petit, plus il faut être pile dessus pour perdre.
+      //    👉 Essaie 0.5 (plus permissif) ou 0.9 (plus sévère).
+      const distanceCollision = 0.7;
+
       // 🎮 RÉGLAGE : à quelle vitesse le joueur glisse sur les côtés.
       //    👉 À toi de l'ajuster plus tard (essaie 0.05, puis 0.3) !
       const vitesseJoueur = 0.12;
@@ -112,6 +185,13 @@
       function animer() {
         requestAnimationFrame(animer); // redemande une nouvelle image
 
+        // 🏁 SI LA PARTIE EST FINIE : on ne bouge plus rien.
+        //    On dessine quand même l'image figée, puis on s'arrête là.
+        if (partieFinie) {
+          renderer.render(scene, camera);
+          return;
+        }
+
         // 🎮 DÉPLACER LE JOUEUR selon les flèches enfoncées.
         //    Flèche gauche → on diminue le x. Flèche droite → on augmente le x.
         if (touches.gauche) joueur.position.x -= vitesseJoueur;
@@ -121,6 +201,29 @@
         //    Si x dépasse la limite (à droite ou à gauche), on le ramène.
         if (joueur.position.x > limiteJoueur)  joueur.position.x = limiteJoueur;
         if (joueur.position.x < -limiteJoueur) joueur.position.x = -limiteJoueur;
+
+        // 🔴 FAIRE AVANCER TOUS LES OBSTACLES vers nous.
+        //    On parcourt le tableau et on traite chaque obstacle un par un.
+        for (const obstacle of obstacles) {
+          obstacle.position.z += vitesseObstacle;
+
+          // Dès qu'il nous a dépassés (z plus grand que la caméra),
+          // on le renvoie au fond sur une NOUVELLE voie au hasard.
+          if (obstacle.position.z > zDisparition) {
+            placerAuFond(obstacle);
+          }
+
+          // 💥 TEST DE COLLISION : l'écart en x ET l'écart en z.
+          //    Math.abs = la distance "sans le signe" (toujours positive).
+          const ecartX = Math.abs(joueur.position.x - obstacle.position.x);
+          const ecartZ = Math.abs(joueur.position.z - obstacle.position.z);
+
+          // Si les DEUX écarts sont petits en même temps → ça touche !
+          if (ecartX < distanceCollision && ecartZ < distanceCollision) {
+            partieFinie = true;                  // on gèle le jeu
+            panneauGameOver.style.display = "flex"; // on affiche le panneau
+          }
+        }
 
         // On glisse le sol vers nous (vers les z positifs).
         sol.position.z += vitesseSol;
