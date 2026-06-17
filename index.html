@@ -138,6 +138,11 @@
       //    👉 Plus c'est grand, plus c'est dur. Essaie 0.1, puis 0.25 !
       const vitesseObstacle = 0.15;
 
+      // 🚀 RÉGLAGE : de combien le facteur grandit à CHAQUE image (~60/seconde).
+      //    Tout petit, sinon ça accélérerait beaucoup trop vite dès le début.
+      //    👉 Essaie 0.00005 (montée plus douce) ou 0.0003 (ça grimpe plus fort) !
+      const accelerationVitesse = 0.0001;
+
       // 🔴 RÉGLAGE : combien d'obstacles en même temps dans le couloir.
       //    👉 Essaie 1, puis 5 : le couloir se remplit !
       const NB_OBSTACLES = 3;
@@ -224,6 +229,12 @@
       //    Au crash, on le passe à true et la boucle gèle tout.
       let partieFinie = false;
 
+      // 🚀 LE MULTIPLICATEUR DE VITESSE : un "bouton de volume" pour la vitesse.
+      //    Il démarre à 1 (= vitesse normale) et grandit un tout petit peu à
+      //    chaque image (de "accelerationVitesse"), ce qui fait accélérer le jeu
+      //    en douceur. "let" car sa valeur CHANGE pendant la partie, comme le score.
+      let facteurVitesse = 1;
+
       // 🔢 LE SCORE : notre compteur de points. Il démarre à 0 à chaque partie.
       //    "let" car sa valeur va CHANGER (à chaque orbe ramassée).
       let score = 0;
@@ -299,6 +310,10 @@
           return;
         }
 
+        // 🚀 ON ACCÉLÈRE : à chaque image, le facteur grandit un peu.
+        //    Plus le temps passe, plus tout va vite. C'est la montée en difficulté.
+        facteurVitesse += accelerationVitesse;
+
         // 🎮 DÉPLACER LE JOUEUR selon les flèches enfoncées.
         //    Flèche gauche → on diminue le x. Flèche droite → on augmente le x.
         if (touches.gauche) joueur.position.x -= vitesseJoueur;
@@ -312,7 +327,7 @@
         // 🔴 FAIRE AVANCER TOUS LES OBSTACLES vers nous.
         //    On parcourt le tableau et on traite chaque obstacle un par un.
         for (const obstacle of obstacles) {
-          obstacle.position.z += vitesseObstacle;
+          obstacle.position.z += vitesseObstacle * facteurVitesse;
 
           // Dès qu'il nous a dépassés (z plus grand que la caméra),
           // on le renvoie au fond sur une NOUVELLE voie au hasard.
@@ -329,7 +344,7 @@
 
         // 🟡 FAIRE AVANCER TOUTES LES ORBES vers nous (comme les obstacles).
         for (const orbe of orbes) {
-          orbe.position.z += vitesseObstacle;
+          orbe.position.z += vitesseObstacle * facteurVitesse;
 
           // Dès qu'elle nous a dépassés, on la renvoie au fond.
           if (orbe.position.z > zDisparition) {
@@ -353,7 +368,7 @@
         }
 
         // On glisse le sol vers nous (vers les z positifs).
-        sol.position.z += vitesseSol;
+        sol.position.z += vitesseSol * facteurVitesse;
 
         // L'astuce du défilement infini : dès que le sol a glissé
         // d'une case complète, on le remet en arrière d'une case.

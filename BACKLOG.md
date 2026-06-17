@@ -22,9 +22,6 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 
 ## 🟦 À faire
 
-### T06 — La montée en difficulté
-**Fini quand :** la vitesse augmente progressivement avec le temps.
-
 ### T07 — L'effet WAOU #1 : le néon (bloom)
 **Fini quand :** les objets lumineux « brillent » grâce au post-traitement (bloom). C'est le moment où le jeu devient beau.
 
@@ -52,6 +49,9 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 ---
 
 ## 🟩 Fait
+
+### T06 — La montée en difficulté
+**Fini quand :** la vitesse augmente progressivement avec le temps. ✅
 
 ### T05 — Les orbes et le score
 **Fini quand :** des orbes à ramasser rapportent des points ; le score s'affiche ; le **meilleur score** est conservé entre deux parties. ✅
