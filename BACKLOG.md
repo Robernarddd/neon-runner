@@ -22,9 +22,6 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 
 ## 🟦 À faire
 
-### T09 — Les écrans et l'interface
-**Fini quand :** un écran de départ (« Appuie pour jouer ») et un écran de game over (« Rejouer ») encadrent la partie ; le score est lisible.
-
 ### T10 — Le publier sur le web
 **Fini quand :** le jeu est en ligne via GitHub Pages et accessible par un **lien** qu'on peut envoyer à un pote.
 
@@ -43,6 +40,9 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 ---
 
 ## 🟩 Fait
+
+### T09 — Les écrans et l'interface
+**Fini quand :** un écran de départ (« Appuie pour jouer ») et un écran de game over (« Rejouer ») encadrent la partie ; le score est lisible. ✅
 
 ### T08 — L'effet WAOU #2 : le juice
 **Fini quand :** particules à la collecte d'un orbe, secousse d'écran au crash, et au moins un son court. Le jeu devient « satisfaisant ». ✅

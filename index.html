@@ -48,6 +48,71 @@
         font-size: 64px;
         text-shadow: 0 0 20px #ff0033;  /* petite lueur néon */
       }
+
+      /* L'écran d'ACCUEIL, posé par-dessus la 3D au démarrage.
+         Affiché au départ (display: flex), on le cachera quand on lance la partie. */
+      #accueil {
+        display: flex;                 /* visible dès l'ouverture de la page */
+        position: fixed;               /* collé à l'écran, par-dessus le jeu */
+        inset: 0;                      /* prend tout l'écran */
+        align-items: center;           /* centre verticalement */
+        justify-content: center;       /* centre horizontalement */
+        flex-direction: column;
+        cursor: pointer;               /* le curseur "main" : ça invite à cliquer */
+        background: rgba(0, 0, 0, 0.6); /* voile noir semi-transparent */
+        font-family: sans-serif;
+      }
+
+      /* Le grand titre du jeu, en cyan néon. */
+      #accueil .titre {
+        color: #00ffff;
+        font-size: 72px;
+        text-shadow: 0 0 20px #00ffff;
+      }
+
+      /* La consigne "Appuie pour jouer", plus petite, en vert comme le joueur. */
+      #accueil .consigne {
+        color: #00ff88;
+        font-size: 28px;
+        margin-top: 24px;
+        text-shadow: 0 0 12px #00ff88;
+      }
+
+      /* Le score final, sous "GAME OVER" : plus petit, en jaune comme les orbes. */
+      #scoreFinal {
+        color: #ffdd00;
+        font-size: 32px;
+        margin-top: 16px;
+        text-shadow: 0 0 12px #ffdd00;
+      }
+
+      /* Le record, sous le score final : un peu plus petit, en cyan. */
+      #recordFinal {
+        color: #00ffff;
+        font-size: 24px;
+        margin-top: 8px;
+        text-shadow: 0 0 12px #00ffff;
+      }
+
+      /* Le bouton "Rejouer" : un cadre néon cyan, transparent à l'intérieur. */
+      #rejouer {
+        margin-top: 32px;
+        padding: 12px 32px;
+        font-family: sans-serif;
+        font-size: 28px;
+        color: #00ffff;                 /* texte cyan */
+        background: transparent;        /* pas de fond : on voit le jeu derrière */
+        border: 2px solid #00ffff;      /* un trait cyan tout autour */
+        border-radius: 8px;             /* coins arrondis */
+        cursor: pointer;                /* le curseur "main" : ça invite à cliquer */
+        text-shadow: 0 0 12px #00ffff;  /* lueur néon sur le texte */
+        box-shadow: 0 0 12px #00ffff;   /* ...et une lueur autour du cadre */
+      }
+
+      /* Quand la souris passe DESSUS le bouton, on l'illumine un peu plus. */
+      #rejouer:hover {
+        background: rgba(0, 255, 255, 0.15);
+      }
     </style>
 
     <!-- L'importmap dit au navigateur où trouver "three" :
@@ -69,8 +134,21 @@
     <!-- Le meilleur score (record), juste en dessous. -->
     <div id="meilleur">Record : 0</div>
 
-    <!-- Le panneau de fin de partie (caché tant qu'on n'a pas perdu). -->
-    <div id="gameover">GAME OVER</div>
+    <!-- L'écran d'accueil, affiché au démarrage. On clique (ou on appuie
+         sur une touche) pour lancer la partie. -->
+    <div id="accueil">
+      <div class="titre">NEON RUNNER</div>
+      <div class="consigne">Appuie pour jouer</div>
+    </div>
+
+    <!-- Le panneau de fin de partie (caché tant qu'on n'a pas perdu).
+         Il contient un titre, le score de la partie, et un bouton "Rejouer". -->
+    <div id="gameover">
+      <div class="titre">GAME OVER</div>
+      <div id="scoreFinal">Score : 0</div>
+      <div id="recordFinal">Record : 0</div>
+      <button id="rejouer">Rejouer</button>
+    </div>
 
     <!-- type="module" : ce script peut "importer" d'autres morceaux de code. -->
     <script type="module">
@@ -210,6 +288,10 @@
       //    👉 Essaie 1, puis 5 : le couloir se remplit !
       const NB_OBSTACLES = 3;
 
+      // 🔴 RÉGLAGE : l'espacement entre deux obstacles au départ (en z).
+      //    Plus c'est grand, plus ils arrivent espacés. 👉 Essaie 5, puis 12 !
+      const ESPACEMENT_OBSTACLES = 8;
+
       // 🔴 RÉGLAGE : la profondeur (z) à laquelle un obstacle a disparu
       //    DERRIÈRE la caméra. Au-delà, on le recycle au fond.
       const zDisparition = 6;
@@ -233,7 +315,7 @@
         const obstacle = new THREE.Mesh(formeObstacle, matiereObstacle);
         obstacle.position.y = 0.4;          // posé sur le sol
         placerAuFond(obstacle);              // voie au hasard, z = -20
-        obstacle.position.z -= i * 8;        // on décale chacun plus loin
+        obstacle.position.z -= i * ESPACEMENT_OBSTACLES; // on décale chacun plus loin
         scene.add(obstacle);                 // on l'ajoute à la scène
         obstacles.push(obstacle);            // ...et au tableau
       }
@@ -248,6 +330,10 @@
       // 🟡 RÉGLAGE : combien d'orbes en même temps dans le couloir.
       //    👉 Essaie 2, puis 6 : plus d'orbes = plus de points à ramasser !
       const NB_ORBES = 4;
+
+      // 🟡 RÉGLAGE : l'espacement entre deux orbes au départ (en z).
+      //    👉 Essaie 4, puis 10 !
+      const ESPACEMENT_ORBES = 6;
 
       // 🎲 LA RECETTE pour renvoyer une orbe TOUT AU FOND, sur une voie
       //    LIBRE (sans cube juste à côté, sinon elle serait impossible à prendre).
@@ -283,7 +369,7 @@
         const orbe = new THREE.Mesh(formeOrbe, matiereOrbe);
         orbe.position.y = 0.4;          // posée un peu au-dessus du sol
         placerOrbeAuFond(orbe);         // voie au hasard, z = -20
-        orbe.position.z -= i * 6;       // on décale chacune plus loin
+        orbe.position.z -= i * ESPACEMENT_ORBES; // on décale chacune plus loin
         scene.add(orbe);                // on l'ajoute à la scène
         orbes.push(orbe);               // ...et au tableau
       }
@@ -339,9 +425,13 @@
         }
       }
 
-      // 🏁 L'ÉTAT DU JEU : tant que c'est false, on joue.
-      //    Au crash, on le passe à true et la boucle gèle tout.
-      let partieFinie = false;
+      // 🏁 L'ÉTAT DU JEU : un "panneau indicateur" qui dit dans quel écran on est.
+      //    Il affiche un mot parmi trois :
+      //      "accueil" = écran de départ (le jeu est figé, on attend) ;
+      //      "jeu"     = on joue (le jeu bouge) ;
+      //      "fini"    = on a perdu (écran de game over, figé).
+      //    Règle d'or : le jeu ne BOUGE que quand etat vaut "jeu".
+      let etat = "accueil";
 
       // 🚀 LE MULTIPLICATEUR DE VITESSE : un "bouton de volume" pour la vitesse.
       //    Il démarre à 1 (= vitesse normale) et grandit un tout petit peu à
@@ -364,6 +454,60 @@
 
       // Un raccourci vers le panneau "GAME OVER" du HTML, pour l'afficher.
       const panneauGameOver = document.getElementById("gameover");
+
+      // Un raccourci vers l'écran d'accueil, pour le cacher au démarrage.
+      const ecranAccueil = document.getElementById("accueil");
+
+      // Des raccourcis vers le score final, le record et le bouton "Rejouer".
+      const scoreFinal = document.getElementById("scoreFinal");
+      const recordFinal = document.getElementById("recordFinal");
+      const boutonRejouer = document.getElementById("rejouer");
+
+      // 🔄 LA RECETTE "reinitialiser" : on remet la partie à son état de départ.
+      //    Utile pour rejouer SANS recharger la page : score à 0, joueur au
+      //    centre, et tous les obstacles/orbes renvoyés au fond comme au début.
+      function reinitialiser() {
+        score = 0;                        // on repart de zéro point
+        facteurVitesse = 1;               // ...et de la vitesse normale
+        joueur.position.x = 0;            // le joueur revient au centre
+
+        // On replace les obstacles comme à la création (au fond, espacés).
+        for (let i = 0; i < obstacles.length; i++) {
+          placerAuFond(obstacles[i]);
+          obstacles[i].position.z -= i * ESPACEMENT_OBSTACLES;
+        }
+        // Pareil pour les orbes.
+        for (let i = 0; i < orbes.length; i++) {
+          placerOrbeAuFond(orbes[i]);
+          orbes[i].position.z -= i * ESPACEMENT_ORBES;
+        }
+
+        zoneScore.textContent = "Score : 0"; // on remet l'affichage du score à 0
+      }
+
+      // ▶️ LA RECETTE "commencerPartie" : on lance une partie toute neuve.
+      //    On réveille l'audio (le navigateur le met en pause au départ), on
+      //    cache les deux écrans, on remet tout à zéro, et on passe sur "jeu".
+      function commencerPartie() {
+        if (audio.state === "suspended") audio.resume();
+        ecranAccueil.style.display = "none";
+        panneauGameOver.style.display = "none";
+        reinitialiser();
+        etat = "jeu";
+      }
+
+      // ▶️ Depuis l'ACCUEIL, on démarre au clic ou à n'importe quelle touche.
+      //    La sécurité "etat === accueil" évite de relancer par erreur juste
+      //    après un crash (sinon une touche redémarrerait aussitôt la partie).
+      function demarrer() {
+        if (etat !== "accueil") return;
+        commencerPartie();
+      }
+      ecranAccueil.addEventListener("click", demarrer);
+      window.addEventListener("keydown", demarrer);
+
+      // ▶️ Depuis le GAME OVER, on rejoue UNIQUEMENT en cliquant le bouton.
+      boutonRejouer.addEventListener("click", commencerPartie);
 
       // Un raccourci vers la zone "Score" du HTML, pour y écrire les points.
       const zoneScore = document.getElementById("score");
@@ -479,9 +623,10 @@
         //    tremble même quand la partie est finie (juste après le crash).
         appliquerSecousse();
 
-        // 🏁 SI LA PARTIE EST FINIE : on ne bouge plus rien.
-        //    On dessine quand même l'image figée, puis on s'arrête là.
-        if (partieFinie) {
+        // 🏁 SI ON N'EST PAS EN TRAIN DE JOUER (accueil ou game over) :
+        //    on ne bouge plus rien. On dessine quand même l'image figée,
+        //    puis on s'arrête là. Le jeu ne bouge QUE si etat vaut "jeu".
+        if (etat !== "jeu") {
           composer.render();
           return;
         }
@@ -513,9 +658,11 @@
 
           // 💥 Si le joueur touche ce cube → game over.
           if (touche(joueur, obstacle)) {
-            partieFinie = true;                  // on gèle le jeu
+            etat = "fini";                       // on gèle le jeu
             secousse = FORCE_SECOUSSE;           // 💥 on lance le tremblement !
             jouerSon(SON_CRASH_HZ, SON_CRASH_DUREE); // 🔊 un "boum" grave et plus long
+            scoreFinal.textContent = "Score : " + score; // on affiche le score de la partie
+            recordFinal.textContent = "Record : " + meilleurScore; // ...et le record
             panneauGameOver.style.display = "flex"; // on affiche le panneau
           }
         }
