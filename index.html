@@ -38,25 +38,50 @@
         0.1,                                  // distance la plus proche visible
         1000                                  // distance la plus lointaine visible
       );
-      camera.position.z = 3; // on recule la caméra pour voir le cube
+      // On place la caméra un peu en hauteur, et on la fait regarder
+      // vers l'avant (le lointain), comme si on était dans un couloir.
+      camera.position.set(0, 1.2, 5);   // x=centre, y=hauteur des yeux, z=un peu en arrière
+      camera.lookAt(0, 0, -5);          // on regarde vers le fond de la scène
 
       // 🖼️ LE RENDERER : le "peintre" qui dessine l'image à l'écran.
       const renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
-      // 🧊 LE MESH : un objet 3D = une forme + une matière (couleur).
-      const forme = new THREE.BoxGeometry(1, 1, 1);          // un cube 1x1x1
-      const matiere = new THREE.MeshNormalMaterial();        // couleurs selon les faces
-      const cube = new THREE.Mesh(forme, matiere);
-      scene.add(cube);
+      // ⚙️ RÉGLAGE : à quelle vitesse le sol défile vers nous.
+      //    Plus le nombre est grand, plus on a l'impression d'aller vite.
+      //    👉 Amuse-toi à changer cette valeur (ex : 0.02, puis 0.2) !
+      const vitesse = 0.05;
+
+      // 🟦 LE SOL : une grille de lignes (un quadrillage néon).
+      //    Taille 20, divisée en 20 cases. La taille d'une case
+      //    est ce qui rendra le défilement infini possible.
+      const TAILLE = 20;
+      const CASES = 20;
+      // La taille d'une case, calculée à partir des deux valeurs ci-dessus.
+      // Ainsi, si on change TAILLE ou CASES, le défilement reste juste.
+      const tailleCase = TAILLE / CASES; // ici : 20 / 20 = 1
+      const sol = new THREE.GridHelper(
+        TAILLE,
+        CASES,
+        0x00ffff, // couleur de la ligne du milieu (cyan)
+        0xff00ff  // couleur des autres lignes (magenta)
+      );
+      scene.add(sol);
 
       // 🔁 LA BOUCLE DE RENDU : rappelée ~60 fois par seconde.
       function animer() {
         requestAnimationFrame(animer); // redemande une nouvelle image
 
-        cube.rotation.x += 0.01; // on tourne un peu le cube...
-        cube.rotation.y += 0.01; // ...sur deux axes
+        // On glisse le sol vers nous (vers les z positifs).
+        sol.position.z += vitesse;
+
+        // L'astuce du défilement infini : dès que le sol a glissé
+        // d'une case complète, on le remet en arrière d'une case.
+        // Comme toutes les cases sont identiques, le saut est invisible.
+        if (sol.position.z >= tailleCase) {
+          sol.position.z -= tailleCase;
+        }
 
         renderer.render(scene, camera); // le peintre dessine l'image
       }

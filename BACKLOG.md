@@ -22,9 +22,6 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 
 ## 🟦 À faire
 
-### T02 — La boucle de jeu et la vitesse
-**Fini quand :** le décor (un sol/des lignes) défile en continu grâce à `requestAnimationFrame`, donnant une sensation d'avancer.
-
 ### T03 — Le joueur et ses déplacements
 **Fini quand :** un objet « joueur » est à l'écran et se déplace à gauche/droite au clavier.
 
@@ -64,6 +61,9 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 ---
 
 ## 🟩 Fait
+
+### T02 — La boucle de jeu et la vitesse
+**Fini quand :** le décor (un sol/des lignes) défile en continu grâce à `requestAnimationFrame`, donnant une sensation d'avancer. ✅
 
 ### T01 — La scène 3D s'affiche
 **Fini quand :** une forme 3D (un cube ou un sol) apparaît à l'écran dans le navigateur, avec une caméra. Premier « waou : c'est en 3D ! » ✅
