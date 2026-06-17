@@ -22,9 +22,6 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 
 ## 🟦 À faire
 
-### T08 — L'effet WAOU #2 : le juice
-**Fini quand :** particules à la collecte d'un orbe, secousse d'écran au crash, et au moins un son court. Le jeu devient « satisfaisant ».
-
 ### T09 — Les écrans et l'interface
 **Fini quand :** un écran de départ (« Appuie pour jouer ») et un écran de game over (« Rejouer ») encadrent la partie ; le score est lisible.
 
@@ -46,6 +43,9 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 ---
 
 ## 🟩 Fait
+
+### T08 — L'effet WAOU #2 : le juice
+**Fini quand :** particules à la collecte d'un orbe, secousse d'écran au crash, et au moins un son court. Le jeu devient « satisfaisant ». ✅
 
 ### T07 — L'effet WAOU #1 : le néon (bloom)
 **Fini quand :** les objets lumineux « brillent » grâce au post-traitement (bloom). C'est le moment où le jeu devient beau. ✅

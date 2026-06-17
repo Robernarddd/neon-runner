@@ -98,6 +98,21 @@
       camera.position.set(0, 1.2, 5);   // x=centre, y=hauteur des yeux, z=un peu en arrière
       camera.lookAt(0, 0, -5);          // on regarde vers le fond de la scène
 
+      // 💥 LA SECOUSSE D'ÉCRAN (screen shake).
+      //    On retient la position de REPOS de la caméra (là où elle revient
+      //    quand tout est calme). On la lira pour la décaler puis la remettre.
+      const cameraReposX = camera.position.x;
+      const cameraReposY = camera.position.y;
+
+      // 💥 RÉGLAGE : la FORCE du tremblement au moment du choc.
+      //    Petit = léger frisson ; grand = gros tremblement de terre.
+      //    👉 Essaie 0.1 (discret) puis 0.5 (violent) !
+      const FORCE_SECOUSSE = 0.25;
+
+      // 💥 L'intensité ACTUELLE du tremblement. 0 = caméra immobile.
+      //    "let" car elle CHANGE : on la monte au crash, puis elle redescend.
+      let secousse = 0;
+
       // 🖼️ LE RENDERER : le "peintre" qui dessine l'image à l'écran.
       const renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -273,6 +288,57 @@
         orbes.push(orbe);               // ...et au tableau
       }
 
+      // ✨ LES PARTICULES (les étincelles à la collecte d'une orbe).
+      //    Même astuce que les obstacles/orbes : une RÉSERVE d'objets qu'on
+      //    recycle, au lieu d'en créer sans arrêt. Forme : un mini-cube.
+      const formeParticule = new THREE.BoxGeometry(0.08, 0.08, 0.08);
+      //    Couleur jaune doré, comme les orbes (le néon les fera briller).
+      const matiereParticule = new THREE.MeshBasicMaterial({ color: 0xffdd00 });
+
+      // ✨ RÉGLAGE : taille de la réserve. Il en faut assez pour plusieurs
+      //    gerbes en même temps. 👉 Essaie 20, puis 60 !
+      const NB_PARTICULES = 40;
+
+      // 📦 Le tableau des particules. Chaque case n'est PAS juste un mesh :
+      //    c'est une petite "fiche" {mesh, vitesse vx/vy/vz, vie}.
+      const particules = [];
+      for (let i = 0; i < NB_PARTICULES; i++) {
+        const mesh = new THREE.Mesh(formeParticule, matiereParticule);
+        mesh.visible = false;           // invisible tant qu'on ne s'en sert pas
+        scene.add(mesh);
+        particules.push({ mesh, vx: 0, vy: 0, vz: 0, vie: 0 });
+      }
+
+      // ✨ RÉGLAGE : combien d'étincelles par gerbe. 👉 Essaie 6, puis 20 !
+      const PARTICULES_PAR_GERBE = 12;
+
+      // ✨ RÉGLAGE : la durée de vie d'une étincelle, EN IMAGES (~60/seconde).
+      //    30 ≈ une demi-seconde. 👉 Essaie 15 (bref) ou 60 (ça traîne) !
+      const VIE_PARTICULE = 30;
+
+      // ✨ RÉGLAGE : à quelle vitesse les étincelles s'éparpillent.
+      //    Plus c'est grand, plus la gerbe est large. 👉 Essaie 0.1 puis 0.4 !
+      const VITESSE_PARTICULE = 0.2;
+
+      // ✨ LA RECETTE "exploser" : réveiller une gerbe d'étincelles à l'endroit
+      //    (x, y, z) donné. On parcourt la réserve, on saute celles déjà en vol,
+      //    et on en lance PARTICULES_PAR_GERBE neuves, chacune dans une direction
+      //    au hasard (mais plutôt vers le haut, pour l'effet "pop" qui jaillit).
+      function exploser(x, y, z) {
+        let lancees = 0;
+        for (const p of particules) {
+          if (p.vie > 0) continue;            // déjà en vol → on la laisse
+          p.mesh.position.set(x, y, z);
+          p.vx = (Math.random() - 0.5) * VITESSE_PARTICULE; // gauche/droite au hasard
+          p.vy = Math.random() * VITESSE_PARTICULE;         // vers le haut (jaillissement)
+          p.vz = (Math.random() - 0.5) * VITESSE_PARTICULE; // avant/arrière au hasard
+          p.vie = VIE_PARTICULE;              // on (re)lance son compte à rebours
+          p.mesh.visible = true;             // on la rend visible
+          lancees++;
+          if (lancees >= PARTICULES_PAR_GERBE) break; // gerbe complète
+        }
+      }
+
       // 🏁 L'ÉTAT DU JEU : tant que c'est false, on joue.
       //    Au crash, on le passe à true et la boucle gèle tout.
       let partieFinie = false;
@@ -330,6 +396,40 @@
       //    👉 À toi de tester : essaie 2.5, 3, 3.5... jusqu'à ce que ce soit parfait.
       const limiteJoueur = 2.5;
 
+      // 🔊 L'ATELIER AUDIO : le "moteur" du navigateur qui fabrique des sons.
+      //    (Le "|| window.webkitAudioContext" est une sécurité pour les vieux Safari.)
+      const audio = new (window.AudioContext || window.webkitAudioContext)();
+
+      // 🔊 LA RECETTE "jouerSon" : produire un bip court.
+      //    - frequence : la hauteur du son, en Hz (grave = petit, aigu = grand).
+      //    - duree     : combien de temps il dure, en secondes.
+      function jouerSon(frequence, duree) {
+        const oscillateur = audio.createOscillator(); // la SOURCE (la note)
+        const volume = audio.createGain();            // le BOUTON DE VOLUME
+
+        oscillateur.type = "square";            // forme de l'onde = "couleur" du son
+        oscillateur.frequency.value = frequence; // la hauteur choisie
+        oscillateur.connect(volume);            // la note passe par le volume...
+        volume.connect(audio.destination);      // ...puis sort dans les haut-parleurs
+
+        // On part d'un petit volume (0.2) et on le fait glisser vers ~0 :
+        // le bip s'éteint en douceur, sans "clac" désagréable.
+        const maintenant = audio.currentTime;
+        volume.gain.setValueAtTime(0.2, maintenant);
+        volume.gain.exponentialRampToValueAtTime(0.001, maintenant + duree);
+
+        oscillateur.start(maintenant);          // on lance la note...
+        oscillateur.stop(maintenant + duree);   // ...et on l'arrête après "duree"
+      }
+
+      // 🔊 RÉGLAGES DES SONS : on regroupe ICI les hauteurs et durées, au lieu
+      //    de les laisser "en dur" au milieu de la boucle de jeu. Pour changer
+      //    un son plus tard, tu modifies juste ces lignes, sans toucher au moteur.
+      const SON_ORBE_HZ = 880;     // bip de collecte : aigu (grand nombre)
+      const SON_ORBE_DUREE = 0.15; // ...et court
+      const SON_CRASH_HZ = 70;     // boum de crash : grave (petit nombre)
+      const SON_CRASH_DUREE = 0.4; // ...et plus long
+
       // 🕹️ ÉCOUTER LE CLAVIER.
       //    On retient simplement quelles flèches sont enfoncées,
       //    dans une "boîte" (un objet) avec deux cases : gauche et droite.
@@ -337,6 +437,9 @@
 
       // keydown = une touche vient d'être ENFONCÉE → on lève le drapeau.
       window.addEventListener("keydown", (e) => {
+        // 🔊 Au tout premier appui, on "réveille" l'atelier audio (le navigateur
+        //    le met en pause au départ tant que le joueur n'a rien fait).
+        if (audio.state === "suspended") audio.resume();
         if (e.key === "ArrowLeft")  touches.gauche = true;
         if (e.key === "ArrowRight") touches.droite = true;
       });
@@ -347,9 +450,34 @@
         if (e.key === "ArrowRight") touches.droite = false;
       });
 
+      // 💥 LA RECETTE DE LA SECOUSSE : appelée à CHAQUE image.
+      //    - Si "secousse" est > 0, on décale la caméra d'un petit montant
+      //      AU HASARD (à gauche/droite et haut/bas), puis on RÉDUIT la secousse :
+      //      à chaque image elle perd 10 % (× 0.9), donc le tremblement s'éteint
+      //      tout seul, en douceur. Quand il devient minuscule, on le coupe net.
+      //    - Si "secousse" vaut 0, on s'assure que la caméra est bien à sa place.
+      function appliquerSecousse() {
+        if (secousse > 0) {
+          // (Math.random() - 0.5) donne un nombre entre -0.5 et +0.5 :
+          // tantôt à gauche, tantôt à droite, d'où le tremblement.
+          camera.position.x = cameraReposX + (Math.random() - 0.5) * secousse;
+          camera.position.y = cameraReposY + (Math.random() - 0.5) * secousse;
+          secousse *= 0.9;                 // le tremblement faiblit à chaque image
+          if (secousse < 0.01) secousse = 0; // assez petit ? on arrête pour de bon
+        } else {
+          // Au repos : la caméra revient pile à sa position de départ.
+          camera.position.x = cameraReposX;
+          camera.position.y = cameraReposY;
+        }
+      }
+
       // 🔁 LA BOUCLE DE RENDU : rappelée ~60 fois par seconde.
       function animer() {
         requestAnimationFrame(animer); // redemande une nouvelle image
+
+        // 💥 On applique la secousse AVANT tout le reste, pour que la caméra
+        //    tremble même quand la partie est finie (juste après le crash).
+        appliquerSecousse();
 
         // 🏁 SI LA PARTIE EST FINIE : on ne bouge plus rien.
         //    On dessine quand même l'image figée, puis on s'arrête là.
@@ -386,6 +514,8 @@
           // 💥 Si le joueur touche ce cube → game over.
           if (touche(joueur, obstacle)) {
             partieFinie = true;                  // on gèle le jeu
+            secousse = FORCE_SECOUSSE;           // 💥 on lance le tremblement !
+            jouerSon(SON_CRASH_HZ, SON_CRASH_DUREE); // 🔊 un "boum" grave et plus long
             panneauGameOver.style.display = "flex"; // on affiche le panneau
           }
         }
@@ -402,6 +532,10 @@
           // ✨ Si le joueur touche cette orbe → on la RAMASSE !
           if (touche(joueur, orbe)) {
             score += pointsParOrbe;            // on ajoute les points
+            // 💥 La gerbe d'étincelles JAILLIT là où était l'orbe (avant
+            //    de la recycler, sinon sa position aurait déjà changé).
+            exploser(orbe.position.x, orbe.position.y, orbe.position.z);
+            jouerSon(SON_ORBE_HZ, SON_ORBE_DUREE); // 🔊 un petit bip aigu et court
             placerOrbeAuFond(orbe);            // l'orbe repart au fond (recyclée)
             zoneScore.textContent = "Score : " + score; // on met à jour l'affichage
 
@@ -413,6 +547,23 @@
               zoneMeilleur.textContent = "Record : " + meilleurScore;
             }
           }
+        }
+
+        // ✨ FAIRE VIVRE LES ÉTINCELLES : on parcourt la réserve et on ne
+        //    traite que celles "en vol" (vie > 0). Pour chacune :
+        //    - on la déplace selon sa vitesse,
+        //    - on baisse sa vie d'une unité (le compte à rebours),
+        //    - on la fait RÉTRÉCIR au fur et à mesure (t va de 1 vers 0),
+        //    - et quand sa vie atteint 0, on la rend invisible (recyclable).
+        for (const p of particules) {
+          if (p.vie <= 0) continue;
+          p.mesh.position.x += p.vx;
+          p.mesh.position.y += p.vy;
+          p.mesh.position.z += p.vz;
+          p.vie -= 1;
+          const fraction = p.vie / VIE_PARTICULE; // 1 au début → 0 à la fin
+          p.mesh.scale.setScalar(fraction);       // taille proportionnelle à la vie
+          if (p.vie <= 0) p.mesh.visible = false;
         }
 
         // On glisse le sol vers nous (vers les z positifs).
