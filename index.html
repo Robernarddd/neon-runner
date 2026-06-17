@@ -51,7 +51,7 @@
       // ⚙️ RÉGLAGE : à quelle vitesse le sol défile vers nous.
       //    Plus le nombre est grand, plus on a l'impression d'aller vite.
       //    👉 Amuse-toi à changer cette valeur (ex : 0.02, puis 0.2) !
-      const vitesse = 0.05;
+      const vitesseSol = 0.05;
 
       // 🟦 LE SOL : une grille de lignes (un quadrillage néon).
       //    Taille 20, divisée en 20 cases. La taille d'une case
@@ -69,12 +69,61 @@
       );
       scene.add(sol);
 
+      // 🟢 LE JOUEUR : un mesh = une FORME + une MATIÈRE (couleur).
+      //    Forme : une petite boîte (largeur, hauteur, profondeur).
+      const formeJoueur = new THREE.BoxGeometry(0.6, 0.6, 0.6);
+      //    Matière : une couleur qui n'a pas besoin de lumière pour se voir
+      //    (MeshBasicMaterial = "toujours visible", parfait pour le néon).
+      const matiereJoueur = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+      //    On assemble la forme et la matière → le mesh "joueur".
+      const joueur = new THREE.Mesh(formeJoueur, matiereJoueur);
+      //    On le place : x=0 (centre), y=0.3 (posé sur le sol), z=3 (près de nous).
+      joueur.position.set(0, 0.3, 3);
+      scene.add(joueur);
+
+      // 🎮 RÉGLAGE : à quelle vitesse le joueur glisse sur les côtés.
+      //    👉 À toi de l'ajuster plus tard (essaie 0.05, puis 0.3) !
+      const vitesseJoueur = 0.12;
+
+      // 🧱 RÉGLAGE : jusqu'où le joueur peut aller à gauche/droite avant
+      //    de toucher le "mur invisible". On la règle À L'ŒIL : le but est
+      //    que le cube s'arrête pile au bord de l'écran, sans en sortir.
+      //    👉 À toi de tester : essaie 2.5, 3, 3.5... jusqu'à ce que ce soit parfait.
+      const limiteJoueur = 2.5;
+
+      // 🕹️ ÉCOUTER LE CLAVIER.
+      //    On retient simplement quelles flèches sont enfoncées,
+      //    dans une "boîte" (un objet) avec deux cases : gauche et droite.
+      const touches = { gauche: false, droite: false };
+
+      // keydown = une touche vient d'être ENFONCÉE → on lève le drapeau.
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft")  touches.gauche = true;
+        if (e.key === "ArrowRight") touches.droite = true;
+      });
+
+      // keyup = une touche vient d'être RELÂCHÉE → on baisse le drapeau.
+      window.addEventListener("keyup", (e) => {
+        if (e.key === "ArrowLeft")  touches.gauche = false;
+        if (e.key === "ArrowRight") touches.droite = false;
+      });
+
       // 🔁 LA BOUCLE DE RENDU : rappelée ~60 fois par seconde.
       function animer() {
         requestAnimationFrame(animer); // redemande une nouvelle image
 
+        // 🎮 DÉPLACER LE JOUEUR selon les flèches enfoncées.
+        //    Flèche gauche → on diminue le x. Flèche droite → on augmente le x.
+        if (touches.gauche) joueur.position.x -= vitesseJoueur;
+        if (touches.droite) joueur.position.x += vitesseJoueur;
+
+        // 🧱 LE MUR INVISIBLE : on empêche le joueur de sortir de l'écran.
+        //    Si x dépasse la limite (à droite ou à gauche), on le ramène.
+        if (joueur.position.x > limiteJoueur)  joueur.position.x = limiteJoueur;
+        if (joueur.position.x < -limiteJoueur) joueur.position.x = -limiteJoueur;
+
         // On glisse le sol vers nous (vers les z positifs).
-        sol.position.z += vitesse;
+        sol.position.z += vitesseSol;
 
         // L'astuce du défilement infini : dès que le sol a glissé
         // d'une case complète, on le remet en arrière d'une case.

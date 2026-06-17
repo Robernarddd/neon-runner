@@ -22,9 +22,6 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 
 ## 🟦 À faire
 
-### T03 — Le joueur et ses déplacements
-**Fini quand :** un objet « joueur » est à l'écran et se déplace à gauche/droite au clavier.
-
 ### T04 — Les obstacles et la collision
 **Fini quand :** des obstacles arrivent vers le joueur ; en toucher un déclenche un **game over**.
 
@@ -61,6 +58,9 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 ---
 
 ## 🟩 Fait
+
+### T03 — Le joueur et ses déplacements
+**Fini quand :** un objet « joueur » est à l'écran et se déplace à gauche/droite au clavier. ✅
 
 ### T02 — La boucle de jeu et la vitesse
 **Fini quand :** le décor (un sol/des lignes) défile en continu grâce à `requestAnimationFrame`, donnant une sensation d'avancer. ✅
