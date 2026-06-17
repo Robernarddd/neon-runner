@@ -22,9 +22,6 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 
 ## 🟦 À faire
 
-### T05 — Les orbes et le score
-**Fini quand :** des orbes à ramasser rapportent des points ; le score s'affiche ; le **meilleur score** est conservé entre deux parties.
-
 ### T06 — La montée en difficulté
 **Fini quand :** la vitesse augmente progressivement avec le temps.
 
@@ -55,6 +52,9 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 ---
 
 ## 🟩 Fait
+
+### T05 — Les orbes et le score
+**Fini quand :** des orbes à ramasser rapportent des points ; le score s'affiche ; le **meilleur score** est conservé entre deux parties. ✅
 
 ### T04 — Les obstacles et la collision
 **Fini quand :** des obstacles arrivent vers le joueur ; en toucher un déclenche un **game over**. ✅

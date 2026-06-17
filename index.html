@@ -11,6 +11,28 @@
         overflow: hidden;
       }
 
+      /* Le compteur de SCORE, posé en haut à gauche, par-dessus la 3D. */
+      #score {
+        position: fixed;               /* collé à l'écran, ne défile pas */
+        top: 16px;                     /* à 16 pixels du haut */
+        left: 16px;                    /* à 16 pixels de la gauche */
+        color: #ffdd00;                /* jaune, comme les orbes */
+        font-family: sans-serif;
+        font-size: 28px;
+        text-shadow: 0 0 12px #ffdd00; /* petite lueur néon */
+      }
+
+      /* Le meilleur score (record), juste sous le score, en cyan. */
+      #meilleur {
+        position: fixed;
+        top: 52px;                     /* un peu plus bas que le score */
+        left: 16px;
+        color: #00ffff;                /* cyan, comme la grille du sol */
+        font-family: sans-serif;
+        font-size: 20px;
+        text-shadow: 0 0 12px #00ffff;
+      }
+
       /* Le panneau "GAME OVER", posé par-dessus la 3D.
          Caché au départ (display: none), on l'affichera au crash. */
       #gameover {
@@ -40,6 +62,12 @@
   </head>
 
   <body>
+    <!-- Le compteur de score, affiché en permanence en haut à gauche. -->
+    <div id="score">Score : 0</div>
+
+    <!-- Le meilleur score (record), juste en dessous. -->
+    <div id="meilleur">Record : 0</div>
+
     <!-- Le panneau de fin de partie (caché tant qu'on n'a pas perdu). -->
     <div id="gameover">GAME OVER</div>
 
@@ -142,17 +170,96 @@
         obstacles.push(obstacle);            // ...et au tableau
       }
 
+      // 🟡 LES ORBES : des billes lumineuses à RAMASSER pour gagner des points.
+      //    Forme : une SPHÈRE (une bille ronde). Les 3 nombres règlent
+      //    le rayon (taille) et le "lissé" (plus c'est grand, plus c'est rond).
+      const formeOrbe = new THREE.SphereGeometry(0.3, 16, 16);
+      //    Matière : jaune doré, "toujours visible" comme le reste (néon).
+      const matiereOrbe = new THREE.MeshBasicMaterial({ color: 0xffdd00 });
+
+      // 🟡 RÉGLAGE : combien d'orbes en même temps dans le couloir.
+      //    👉 Essaie 2, puis 6 : plus d'orbes = plus de points à ramasser !
+      const NB_ORBES = 4;
+
+      // 🎲 LA RECETTE pour renvoyer une orbe TOUT AU FOND, sur une voie
+      //    LIBRE (sans cube juste à côté, sinon elle serait impossible à prendre).
+      //    Méthode : on tire une voie au hasard, on VÉRIFIE, et on RECOMMENCE
+      //    si ça ne va pas — avec une limite d'essais pour ne jamais bloquer.
+      function placerOrbeAuFond(orbe) {
+        for (let essai = 0; essai < 10; essai++) {
+          orbe.position.x = Math.random() * 5 - 2.5; // voie au hasard
+          orbe.position.z = -20;                      // tout au fond
+
+          // On regarde chaque obstacle : y en a-t-il un sur la même voie
+          // ET lui aussi vers le fond (donc qui voyagerait collé à l'orbe) ?
+          let voieLibre = true;
+          for (const obstacle of obstacles) {
+            const memeVoie = Math.abs(obstacle.position.x - orbe.position.x) < 1;
+            const aussiAuFond = obstacle.position.z < -10;
+            if (memeVoie && aussiAuFond) {
+              voieLibre = false; // raté : un cube occupe déjà cette voie
+            }
+          }
+
+          // Voie dégagée ? On a trouvé, on arrête de chercher.
+          if (voieLibre) return;
+        }
+      }
+
+      // 📦 LE TABLEAU des orbes (comme le tableau des obstacles).
+      const orbes = [];
+
+      // On fabrique NB_ORBES billes, espacées au départ pour qu'elles
+      // n'arrivent pas toutes collées.
+      for (let i = 0; i < NB_ORBES; i++) {
+        const orbe = new THREE.Mesh(formeOrbe, matiereOrbe);
+        orbe.position.y = 0.4;          // posée un peu au-dessus du sol
+        placerOrbeAuFond(orbe);         // voie au hasard, z = -20
+        orbe.position.z -= i * 6;       // on décale chacune plus loin
+        scene.add(orbe);                // on l'ajoute à la scène
+        orbes.push(orbe);               // ...et au tableau
+      }
+
       // 🏁 L'ÉTAT DU JEU : tant que c'est false, on joue.
       //    Au crash, on le passe à true et la boucle gèle tout.
       let partieFinie = false;
 
+      // 🔢 LE SCORE : notre compteur de points. Il démarre à 0 à chaque partie.
+      //    "let" car sa valeur va CHANGER (à chaque orbe ramassée).
+      let score = 0;
+
+      // 🏆 LE MEILLEUR SCORE : on le LIT dans le "carnet" du navigateur.
+      //    getItem renvoie du texte (ou rien la 1re fois) ; Number(...) le
+      //    transforme en nombre, et "|| 0" met 0 s'il n'y a encore rien.
+      let meilleurScore = Number(localStorage.getItem("meilleurScore")) || 0;
+
+      // 🟡 RÉGLAGE : combien de points rapporte UNE orbe ramassée.
+      //    👉 Mets 10, ou 50 : à toi de choisir la "valeur" d'une orbe !
+      const pointsParOrbe = 10;
+
       // Un raccourci vers le panneau "GAME OVER" du HTML, pour l'afficher.
       const panneauGameOver = document.getElementById("gameover");
+
+      // Un raccourci vers la zone "Score" du HTML, pour y écrire les points.
+      const zoneScore = document.getElementById("score");
+
+      // Un raccourci vers la zone "Record", et on y affiche le record lu.
+      const zoneMeilleur = document.getElementById("meilleur");
+      zoneMeilleur.textContent = "Record : " + meilleurScore;
 
       // 💥 RÉGLAGE : à quelle distance on considère que ça "touche".
       //    Plus c'est petit, plus il faut être pile dessus pour perdre.
       //    👉 Essaie 0.5 (plus permissif) ou 0.9 (plus sévère).
       const distanceCollision = 0.7;
+
+      // 💥 LA RECETTE "est-ce que A touche B ?" : une SEULE fonction, utilisée
+      //    pour les cubes ET pour les orbes. On regarde l'écart en x ET en z
+      //    (Math.abs = la distance sans le signe). Elle renvoie true ou false.
+      function touche(a, b) {
+        const ecartX = Math.abs(a.position.x - b.position.x);
+        const ecartZ = Math.abs(a.position.z - b.position.z);
+        return ecartX < distanceCollision && ecartZ < distanceCollision;
+      }
 
       // 🎮 RÉGLAGE : à quelle vitesse le joueur glisse sur les côtés.
       //    👉 À toi de l'ajuster plus tard (essaie 0.05, puis 0.3) !
@@ -213,15 +320,35 @@
             placerAuFond(obstacle);
           }
 
-          // 💥 TEST DE COLLISION : l'écart en x ET l'écart en z.
-          //    Math.abs = la distance "sans le signe" (toujours positive).
-          const ecartX = Math.abs(joueur.position.x - obstacle.position.x);
-          const ecartZ = Math.abs(joueur.position.z - obstacle.position.z);
-
-          // Si les DEUX écarts sont petits en même temps → ça touche !
-          if (ecartX < distanceCollision && ecartZ < distanceCollision) {
+          // 💥 Si le joueur touche ce cube → game over.
+          if (touche(joueur, obstacle)) {
             partieFinie = true;                  // on gèle le jeu
             panneauGameOver.style.display = "flex"; // on affiche le panneau
+          }
+        }
+
+        // 🟡 FAIRE AVANCER TOUTES LES ORBES vers nous (comme les obstacles).
+        for (const orbe of orbes) {
+          orbe.position.z += vitesseObstacle;
+
+          // Dès qu'elle nous a dépassés, on la renvoie au fond.
+          if (orbe.position.z > zDisparition) {
+            placerOrbeAuFond(orbe);
+          }
+
+          // ✨ Si le joueur touche cette orbe → on la RAMASSE !
+          if (touche(joueur, orbe)) {
+            score += pointsParOrbe;            // on ajoute les points
+            placerOrbeAuFond(orbe);            // l'orbe repart au fond (recyclée)
+            zoneScore.textContent = "Score : " + score; // on met à jour l'affichage
+
+            // 🏆 Vient-on de DÉPASSER le record ? Si oui, on le met à jour
+            //    EN DIRECT (affichage + enregistrement dans le carnet).
+            if (score > meilleurScore) {
+              meilleurScore = score;
+              localStorage.setItem("meilleurScore", meilleurScore);
+              zoneMeilleur.textContent = "Record : " + meilleurScore;
+            }
           }
         }
 
