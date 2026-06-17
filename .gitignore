@@ -1,0 +1,12 @@
+# Dépendances (si un jour on passe à un outil de build type Vite)
+node_modules/
+dist/
+
+# Secrets — au cas où on ajoute un classement en ligne plus tard
+.env
+
+# Logs
+*.log
+
+# macOS
+.DS_Store

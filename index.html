@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Neon Runner</title>
+    <style>
+      /* On enlève les marges et on cache les barres de défilement
+         pour que la 3D prenne tout l'écran. */
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
+
+    <!-- L'importmap dit au navigateur où trouver "three" :
+         on le charge depuis un CDN (un site qui héberge la bibliothèque). -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        }
+      }
+    </script>
+  </head>
+
+  <body>
+    <!-- type="module" : ce script peut "importer" d'autres morceaux de code. -->
+    <script type="module">
+      import * as THREE from "three";
+
+      // 🎬 LA SCÈNE : le décor où l'on place les objets.
+      const scene = new THREE.Scene();
+
+      // 📷 LA CAMÉRA : l'œil par lequel on regarde la scène.
+      const camera = new THREE.PerspectiveCamera(
+        75,                                   // angle de vue (en degrés)
+        window.innerWidth / window.innerHeight, // proportions de l'écran
+        0.1,                                  // distance la plus proche visible
+        1000                                  // distance la plus lointaine visible
+      );
+      camera.position.z = 3; // on recule la caméra pour voir le cube
+
+      // 🖼️ LE RENDERER : le "peintre" qui dessine l'image à l'écran.
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      // 🧊 LE MESH : un objet 3D = une forme + une matière (couleur).
+      const forme = new THREE.BoxGeometry(1, 1, 1);          // un cube 1x1x1
+      const matiere = new THREE.MeshNormalMaterial();        // couleurs selon les faces
+      const cube = new THREE.Mesh(forme, matiere);
+      scene.add(cube);
+
+      // 🔁 LA BOUCLE DE RENDU : rappelée ~60 fois par seconde.
+      function animer() {
+        requestAnimationFrame(animer); // redemande une nouvelle image
+
+        cube.rotation.x += 0.01; // on tourne un peu le cube...
+        cube.rotation.y += 0.01; // ...sur deux axes
+
+        renderer.render(scene, camera); // le peintre dessine l'image
+      }
+
+      animer(); // on lance la boucle
+    </script>
+  </body>
+</html>
