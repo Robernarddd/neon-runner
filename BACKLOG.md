@@ -22,9 +22,6 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 
 ## 🟦 À faire
 
-### T10 — Le publier sur le web
-**Fini quand :** le jeu est en ligne via GitHub Pages et accessible par un **lien** qu'on peut envoyer à un pote.
-
 ### T11 — Un deuxième thème visuel
 **Fini quand :** un nouveau thème (couleurs/vitesse) est jouable **en ne modifiant que le fichier de configuration**, sans toucher au moteur.
 
@@ -40,6 +37,10 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 ---
 
 ## 🟩 Fait
+
+### T10 — Le publier sur le web
+**Fini quand :** le jeu est en ligne via GitHub Pages et accessible par un **lien** qu'on peut envoyer à un pote. ✅
+👉 En ligne : https://robernarddd.github.io/neon-runner/
 
 ### T09 — Les écrans et l'interface
 **Fini quand :** un écran de départ (« Appuie pour jouer ») et un écran de game over (« Rejouer ») encadrent la partie ; le score est lisible. ✅
