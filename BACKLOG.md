@@ -22,8 +22,7 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 
 ## 🟦 À faire
 
-### T12 — README + démo
-**Fini quand :** un `README.md` explique le jeu et comment y jouer, et le jeu tourne pour une démo avec les potes.
+*(vide — tous les tickets sont faits ! 🎉)*
 
 ---
 
@@ -34,6 +33,10 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 ---
 
 ## 🟩 Fait
+
+### T12 — README + démo
+**Fini quand :** un `README.md` explique le jeu et comment y jouer, et le jeu tourne pour une démo avec les potes. ✅
+👉 `README.md` créé : présentation, lien de jeu en ligne, commandes, but du jeu, lancement local. Jeu testé dans le navigateur.
 
 ### T13 — Des objets 3D importés du web
 **Fini quand :** au moins un vrai modèle 3D (fichier `.glb`/`.gltf`, libre de droits) est chargé avec `GLTFLoader` et apparaît dans le jeu (par ex. le joueur ou les obstacles). ✅
