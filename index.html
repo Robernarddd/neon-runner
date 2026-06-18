@@ -160,6 +160,10 @@
       import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
       import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
       import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+      // 🚀 LE CHARGEUR DE MODÈLES 3D : l'outil qui sait OUVRIR un fichier .glb
+      //    (un objet 3D tout fait, avec sa forme et ses couleurs) et le poser
+      //    dans notre scène. "GLTF" est le format ; "Loader" veut dire "chargeur".
+      import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
       // 🎨 LES RÉGLAGES : on importe le thème choisi depuis le fichier de config.
       //    "theme" contient toutes les couleurs et vitesses. Pour changer
@@ -276,6 +280,37 @@
       joueur.position.set(0, 0.3, 3);
       scene.add(joueur);
 
+      // 🚀 LE VAISSEAU : un VRAI modèle 3D importé du web (fichier .glb).
+      //    Astuce de jeu vidéo : on garde le cube ci-dessus comme "HITBOX"
+      //    (la boîte de collision, invisible) — c'est elle qui détecte les chocs.
+      //    Le vaisseau, lui, est juste la PARTIE VISIBLE, posée par-dessus.
+      joueur.visible = false; // on cache le cube : il ne sert plus qu'aux collisions
+
+      // 💡 LA LUMIÈRE : un vrai modèle 3D a besoin d'être ÉCLAIRÉ pour qu'on le
+      //    voie (sinon il apparaît tout noir). Nos autres formes, elles, sont en
+      //    matière "toujours visible" : la lumière ne les change pas. On ajoute donc :
+      //    - une lumière AMBIANTE : éclaire tout, partout, de façon douce et égale ;
+      const lumiereAmbiante = new THREE.AmbientLight(0xffffff, 1.2);
+      scene.add(lumiereAmbiante);
+      //    - une lumière DIRIGÉE : comme un soleil, elle vient d'un coin précis et
+      //      crée du relief (un côté plus clair, un côté plus sombre).
+      const lumiereSoleil = new THREE.DirectionalLight(0xffffff, 2.5);
+      lumiereSoleil.position.set(2, 4, 3); // d'où vient la lumière (en haut, à droite, devant)
+      scene.add(lumiereSoleil);
+
+      // 🚀 ON CHARGE LE VAISSEAU. Le chargement prend un petit instant : le code
+      //    continue sans attendre, et la fonction entre accolades est appelée
+      //    PLUS TARD, quand le fichier est prêt (d'où "vaisseau = null" au départ).
+      let vaisseau = null;
+      const chargeur = new GLTFLoader();
+      chargeur.load("./models/Spaceship.glb", (gltf) => {
+        vaisseau = gltf.scene;            // l'objet 3D contenu dans le fichier
+        vaisseau.scale.setScalar(0.2);    // 📏 sa TAILLE (à régler à l'œil)
+        vaisseau.rotation.y = Math.PI;    // 🔄 on le tourne pour qu'il regarde le fond
+        vaisseau.position.copy(joueur.position); // on le pose là où est la hitbox
+        scene.add(vaisseau);
+      });
+
       // 🔴 LES OBSTACLES : des mesh (forme + couleur), comme le joueur.
       //    Forme et matière sont les MÊMES pour tous : on les crée une fois,
       //    puis on les réutilise pour chaque cube (c'est plus économe).
@@ -320,11 +355,64 @@
       // tous arriver collés. La boucle "for" répète NB_OBSTACLES fois.
       for (let i = 0; i < NB_OBSTACLES; i++) {
         const obstacle = new THREE.Mesh(formeObstacle, matiereObstacle);
+        obstacle.visible = false;            // cube = HITBOX invisible (collisions seulement)
         obstacle.position.y = 0.4;          // posé sur le sol
         placerAuFond(obstacle);              // voie au hasard, z = -20
         obstacle.position.z -= i * ESPACEMENT_OBSTACLES; // on décale chacun plus loin
         scene.add(obstacle);                 // on l'ajoute à la scène
         obstacles.push(obstacle);            // ...et au tableau
+      }
+
+      // 🪨 LES ASTÉROÏDES : la PARTIE VISIBLE des obstacles. On a 3 formes
+      //    différentes ! On les charge toutes, puis chaque obstacle reçoit une
+      //    COPIE (clone) d'un modèle TIRÉ AU HASARD → de la variété dans le couloir.
+      const fichiersAsteroides = [
+        "./models/Asteroid.glb",
+        "./models/Asteroid2.glb",
+        "./models/Asteroid3.glb",
+      ];
+      const formesAsteroides = []; // les 3 modèles, une fois chargés
+
+      // 📏 RÉGLAGE : la taille des astéroïdes DANS LE JEU (en unités du jeu).
+      //    Comme les 3 modèles n'ont pas la même taille d'origine, on les
+      //    "normalise" : on mesure chacun et on l'ajuste pour que tous fassent
+      //    pareil à l'écran. 👉 Essaie 0.8, puis 1.5 !
+      const TAILLE_ASTEROIDE = 1.0;
+
+      // 🔄 RÉGLAGE : à quelle vitesse les astéroïdes tournent sur eux-mêmes,
+      //    sur deux axes (pour un mouvement de "culbute" dans l'espace).
+      //    👉 Mets 0 pour les figer, ou monte à 0.05 pour qu'ils tournent vite !
+      const VITESSE_ROTATION_ASTEROIDE_X = 0.01;
+      const VITESSE_ROTATION_ASTEROIDE_Y = 0.02;
+
+      // 🔧 PETITE RECETTE : ajuster un modèle pour que son plus grand côté
+      //    fasse "tailleVoulue". On l'enferme dans une boîte (Box3), on mesure
+      //    cette boîte, puis on met le modèle à l'échelle qu'il faut.
+      function ajusterTaille(modele, tailleVoulue) {
+        const boite = new THREE.Box3().setFromObject(modele);
+        const dimensions = new THREE.Vector3();
+        boite.getSize(dimensions); // remplit dimensions avec largeur/hauteur/profondeur
+        const plusGrandCote = Math.max(dimensions.x, dimensions.y, dimensions.z);
+        modele.scale.setScalar(tailleVoulue / plusGrandCote);
+      }
+
+      // On charge les 3 fichiers. Quand le DERNIER est arrivé (les 3 sont prêts),
+      // on "habille" chaque obstacle d'un astéroïde au hasard.
+      for (const fichier of fichiersAsteroides) {
+        chargeur.load(fichier, (gltf) => {
+          formesAsteroides.push(gltf.scene);
+          if (formesAsteroides.length === fichiersAsteroides.length) {
+            for (const obstacle of obstacles) {
+              // tire un modèle au hasard parmi les 3 formes chargées
+              const modele = formesAsteroides[Math.floor(Math.random() * formesAsteroides.length)];
+              const visuel = modele.clone();           // une copie de ce modèle
+              ajusterTaille(visuel, TAILLE_ASTEROIDE);  // même taille pour tous
+              visuel.position.copy(obstacle.position);  // posé sur sa hitbox
+              scene.add(visuel);
+              obstacle.visuel = visuel;                 // lien hitbox → visuel
+            }
+          }
+        });
       }
 
       // 🟡 LES ORBES : des billes lumineuses à RAMASSER pour gagner des points.
@@ -374,12 +462,35 @@
       // n'arrivent pas toutes collées.
       for (let i = 0; i < NB_ORBES; i++) {
         const orbe = new THREE.Mesh(formeOrbe, matiereOrbe);
+        orbe.visible = false;           // sphère = HITBOX invisible (collisions seulement)
         orbe.position.y = 0.4;          // posée un peu au-dessus du sol
         placerOrbeAuFond(orbe);         // voie au hasard, z = -20
         orbe.position.z -= i * ESPACEMENT_ORBES; // on décale chacune plus loin
         scene.add(orbe);                // on l'ajoute à la scène
         orbes.push(orbe);               // ...et au tableau
       }
+
+      // 💎 LES CRISTAUX : la PARTIE VISIBLE des orbes. Comme pour les astéroïdes,
+      //    on charge le modèle une fois et on le clone pour chaque hitbox. NOUVEAUTÉ :
+      //    on repeint chaque cristal avec notre matière néon (matiereOrbe) pour qu'il
+      //    BRILLE (et profite du bloom). "traverse" parcourt tous les morceaux du modèle.
+      const TAILLE_CRISTAL = 0.15; // 📏 taille des cristaux (à régler à l'œil)
+
+      // 🔄 RÉGLAGE : à quelle vitesse les cristaux pivotent (pour scintiller).
+      //    👉 Essaie 0.01 (lent) ou 0.08 (toupie folle) !
+      const VITESSE_ROTATION_CRISTAL = 0.03;
+      chargeur.load("./models/Crystal.glb", (gltf) => {
+        for (const orbe of orbes) {
+          const visuel = gltf.scene.clone();      // une copie du modèle
+          visuel.scale.setScalar(TAILLE_CRISTAL); // sa taille
+          visuel.traverse((morceau) => {          // pour chaque morceau du cristal...
+            if (morceau.isMesh) morceau.material = matiereOrbe; // ...couleur néon brillante
+          });
+          visuel.position.copy(orbe.position);    // posé sur sa hitbox
+          scene.add(visuel);
+          orbe.visuel = visuel;                   // on garde le lien hitbox → visuel
+        }
+      });
 
       // ✨ LES PARTICULES (les étincelles à la collecte d'une orbe).
       //    Même astuce que les obstacles/orbes : une RÉSERVE d'objets qu'on
@@ -652,6 +763,19 @@
         if (joueur.position.x > limiteJoueur)  joueur.position.x = limiteJoueur;
         if (joueur.position.x < -limiteJoueur) joueur.position.x = -limiteJoueur;
 
+        // 🚀 LE VAISSEAU SUIT LA HITBOX : on recopie la position du cube invisible
+        //    sur le vaisseau, pour qu'il glisse à gauche/droite avec toi.
+        //    "if (vaisseau)" : tant que le fichier n'est pas chargé, on ne fait rien.
+        if (vaisseau) {
+          vaisseau.position.x = joueur.position.x;
+          // ✈️ PETIT PENCHEMENT : le vaisseau s'incline du côté où il tourne, comme
+          //    un avion. On vise une inclinaison et on s'en approche en douceur.
+          let inclinaisonCible = 0;
+          if (touches.gauche) inclinaisonCible = 0.4;
+          if (touches.droite) inclinaisonCible = -0.4;
+          vaisseau.rotation.z += (inclinaisonCible - vaisseau.rotation.z) * 0.1;
+        }
+
         // 🔴 FAIRE AVANCER TOUS LES OBSTACLES vers nous.
         //    On parcourt le tableau et on traite chaque obstacle un par un.
         for (const obstacle of obstacles) {
@@ -661,6 +785,13 @@
           // on le renvoie au fond sur une NOUVELLE voie au hasard.
           if (obstacle.position.z > zDisparition) {
             placerAuFond(obstacle);
+          }
+
+          // 🪨 L'astéroïde (le visuel) suit sa hitbox et tourne sur lui-même.
+          if (obstacle.visuel) {
+            obstacle.visuel.position.copy(obstacle.position);
+            obstacle.visuel.rotation.x += VITESSE_ROTATION_ASTEROIDE_X; // culbute (haut/bas)
+            obstacle.visuel.rotation.y += VITESSE_ROTATION_ASTEROIDE_Y; // culbute (gauche/droite)
           }
 
           // 💥 Si le joueur touche ce cube → game over.
@@ -681,6 +812,12 @@
           // Dès qu'elle nous a dépassés, on la renvoie au fond.
           if (orbe.position.z > zDisparition) {
             placerOrbeAuFond(orbe);
+          }
+
+          // 💎 Le cristal (le visuel) suit sa hitbox et tourne sur lui-même.
+          if (orbe.visuel) {
+            orbe.visuel.position.copy(orbe.position);
+            orbe.visuel.rotation.y += VITESSE_ROTATION_CRISTAL; // il pivote pour scintiller
           }
 
           // ✨ Si le joueur touche cette orbe → on la RAMASSE !
