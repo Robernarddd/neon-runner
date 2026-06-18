@@ -161,8 +161,15 @@
       import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
       import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 
+      // 🎨 LES RÉGLAGES : on importe le thème choisi depuis le fichier de config.
+      //    "theme" contient toutes les couleurs et vitesses. Pour changer
+      //    l'ambiance, on modifie theme.js — JAMAIS ce fichier-ci (le moteur).
+      import { theme } from "./theme.js";
+
       // 🎬 LA SCÈNE : le décor où l'on place les objets.
       const scene = new THREE.Scene();
+      // La couleur du fond de la scène vient du thème.
+      scene.background = new THREE.Color(theme.couleurFond);
 
       // 📷 LA CAMÉRA : l'œil par lequel on regarde la scène.
       const camera = new THREE.PerspectiveCamera(
@@ -239,7 +246,7 @@
       // ⚙️ RÉGLAGE : à quelle vitesse le sol défile vers nous.
       //    Plus le nombre est grand, plus on a l'impression d'aller vite.
       //    👉 Amuse-toi à changer cette valeur (ex : 0.02, puis 0.2) !
-      const vitesseSol = 0.05;
+      const vitesseSol = theme.vitesseSol;
 
       // 🟦 LE SOL : une grille de lignes (un quadrillage néon).
       //    Taille 20, divisée en 20 cases. La taille d'une case
@@ -252,8 +259,8 @@
       const sol = new THREE.GridHelper(
         TAILLE,
         CASES,
-        0x00ffff, // couleur de la ligne du milieu (cyan)
-        0xff00ff  // couleur des autres lignes (magenta)
+        theme.couleurSolCentre, // couleur de la ligne du milieu
+        theme.couleurSolLignes  // couleur des autres lignes
       );
       scene.add(sol);
 
@@ -262,7 +269,7 @@
       const formeJoueur = new THREE.BoxGeometry(0.6, 0.6, 0.6);
       //    Matière : une couleur qui n'a pas besoin de lumière pour se voir
       //    (MeshBasicMaterial = "toujours visible", parfait pour le néon).
-      const matiereJoueur = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+      const matiereJoueur = new THREE.MeshBasicMaterial({ color: theme.couleurJoueur });
       //    On assemble la forme et la matière → le mesh "joueur".
       const joueur = new THREE.Mesh(formeJoueur, matiereJoueur);
       //    On le place : x=0 (centre), y=0.3 (posé sur le sol), z=3 (près de nous).
@@ -273,16 +280,16 @@
       //    Forme et matière sont les MÊMES pour tous : on les crée une fois,
       //    puis on les réutilise pour chaque cube (c'est plus économe).
       const formeObstacle = new THREE.BoxGeometry(0.8, 0.8, 0.8);
-      const matiereObstacle = new THREE.MeshBasicMaterial({ color: 0xff0033 });
+      const matiereObstacle = new THREE.MeshBasicMaterial({ color: theme.couleurObstacle });
 
       // 🔴 RÉGLAGE : à quelle vitesse les obstacles foncent vers nous.
       //    👉 Plus c'est grand, plus c'est dur. Essaie 0.1, puis 0.25 !
-      const vitesseObstacle = 0.15;
+      const vitesseObstacle = theme.vitesseObstacle;
 
       // 🚀 RÉGLAGE : de combien le facteur grandit à CHAQUE image (~60/seconde).
       //    Tout petit, sinon ça accélérerait beaucoup trop vite dès le début.
       //    👉 Essaie 0.00005 (montée plus douce) ou 0.0003 (ça grimpe plus fort) !
-      const accelerationVitesse = 0.0001;
+      const accelerationVitesse = theme.accelerationVitesse;
 
       // 🔴 RÉGLAGE : combien d'obstacles en même temps dans le couloir.
       //    👉 Essaie 1, puis 5 : le couloir se remplit !
@@ -325,7 +332,7 @@
       //    le rayon (taille) et le "lissé" (plus c'est grand, plus c'est rond).
       const formeOrbe = new THREE.SphereGeometry(0.3, 16, 16);
       //    Matière : jaune doré, "toujours visible" comme le reste (néon).
-      const matiereOrbe = new THREE.MeshBasicMaterial({ color: 0xffdd00 });
+      const matiereOrbe = new THREE.MeshBasicMaterial({ color: theme.couleurOrbe });
 
       // 🟡 RÉGLAGE : combien d'orbes en même temps dans le couloir.
       //    👉 Essaie 2, puis 6 : plus d'orbes = plus de points à ramasser !
@@ -379,7 +386,7 @@
       //    recycle, au lieu d'en créer sans arrêt. Forme : un mini-cube.
       const formeParticule = new THREE.BoxGeometry(0.08, 0.08, 0.08);
       //    Couleur jaune doré, comme les orbes (le néon les fera briller).
-      const matiereParticule = new THREE.MeshBasicMaterial({ color: 0xffdd00 });
+      const matiereParticule = new THREE.MeshBasicMaterial({ color: theme.couleurParticule });
 
       // ✨ RÉGLAGE : taille de la réserve. Il en faut assez pour plusieurs
       //    gerbes en même temps. 👉 Essaie 20, puis 60 !

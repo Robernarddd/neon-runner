@@ -22,8 +22,8 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 
 ## 🟦 À faire
 
-### T11 — Un deuxième thème visuel
-**Fini quand :** un nouveau thème (couleurs/vitesse) est jouable **en ne modifiant que le fichier de configuration**, sans toucher au moteur.
+### T13 — Des objets 3D importés du web
+**Fini quand :** au moins un vrai modèle 3D (fichier `.glb`/`.gltf`, libre de droits) est chargé avec `GLTFLoader` et apparaît dans le jeu (par ex. le joueur ou les obstacles).
 
 ### T12 — README + démo
 **Fini quand :** un `README.md` explique le jeu et comment y jouer, et le jeu tourne pour une démo avec les potes.
@@ -37,6 +37,10 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 ---
 
 ## 🟩 Fait
+
+### T11 — Un deuxième thème visuel
+**Fini quand :** un nouveau thème (couleurs/vitesse) est jouable **en ne modifiant que le fichier de configuration**, sans toucher au moteur. ✅
+👉 5 thèmes dans `theme.js` (neon, coucherDeSoleil, halo, haloChief, haloForerunner). Actif : haloForerunner.
 
 ### T10 — Le publier sur le web
 **Fini quand :** le jeu est en ligne via GitHub Pages et accessible par un **lien** qu'on peut envoyer à un pote. ✅
@@ -78,3 +82,4 @@ L'ordre est pensé pour avoir **toujours un truc jouable**, puis ajouter le « w
 - Musique et sons plus riches.
 - Version tactile pour jouer sur téléphone.
 - Bonus temporaires (bouclier, ralenti, aimant à orbes).
+- D'autres thèmes visuels (on a déjà un catalogue dans `theme.js`).
